@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake and Ladder Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        canvas {
+            display: block;
+            margin: 20px auto;
+            border: 1px solid black;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Snake and Ladder Game</h1>
+    <canvas id="gameCanvas" width="500" height="500"></canvas>
+    <p id="status">Player 1's turn</p>
+    <button id="rollDice">Roll Dice</button>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const status = document.getElementById('status');
+        const rollDiceButton = document.getElementById('rollDice');
+
+        const boardSize = 10;
+        const cellSize = canvas.width / boardSize;
+        const snakes = { 16: 6, 47: 26, 49: 11, 56: 53, 62: 19, 64: 60, 87: 24, 93: 73, 95: 75, 98: 78 };
+        const ladders = { 1: 38, 4: 14, 9: 31, 21: 42, 28: 84, 36: 44, 51: 67, 71: 91, 80: 100 };
+
+        let players = [
+            { position: 0, color: 'red' },
+            { position: 0, color: 'blue' }
+        ];
+        let currentPlayerIndex = 0;
+
+        function drawBoard() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            for (let row = 0; row < boardSize; row++) {
+                for (let col = 0; col < boardSize; col++) {
+                    const x = col * cellSize;
+                    const y = (boardSize - row - 1) * cellSize;
+                    const number = row * boardSize + (row % 2 === 0 ? col + 1 : boardSize - col);
+                    ctx.strokeRect(x, y, cellSize, cellSize);
+                    ctx.fillText(number, x + 5, y + 15);
+                }
+            }
+        }
+
+        function drawSnakesAndLadders() {
+            for (let start in snakes) {
+                drawLine(start, snakes[start], 'green');
+            }
+            for (let start in ladders) {
+                drawLine(start, ladders[start], 'orange');
+            }
+        }
+
+        function drawLine(start, end, color) {
+            const [startX, startY] = getCoordinates(start);
+            const [endX, endY] = getCoordinates(end);
+            ctx.strokeStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(startX + cellSize / 2, startY + cellSize / 2);
+            ctx.lineTo(endX + cellSize / 2, endY + cellSize / 2);
+            ctx.stroke();
+        }
+
+        function getCoordinates(position) {
+            const row = Math.floor((position - 1) / boardSize);
+            const col = (row % 2 === 0) ? (position - 1) % boardSize : boardSize - 1 - (position - 1) % boardSize;
+            return [col * cellSize, (boardSize - row - 1) * cellSize];
+        }
+
+        function drawPlayers() {
+            players.forEach(player => {
+                const [x, y] = getCoordinates(player.position);
+                ctx.fillStyle = player.color;
+                ctx.beginPath();
+                ctx.arc(x + cellSize / 2, y + cellSize / 2, cellSize / 4, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        function movePlayer() {
+            const player = players[currentPlayerIndex];
+            const diceRoll = Math.floor(Math.random() * 6) + 1;
+            player.position += diceRoll;
+
+            if (player.position > 100) {
+                player.position = 100 - (player.position - 100);
+            }
+
+            if (snakes[player.position]) {
+                player.position = snakes[player.position];
+            } else if (ladders[player.position]) {
+                player.position = ladders[player.position];
+            }
+
+            if (player.position === 100) {
+                status.textContent = `Player ${currentPlayerIndex + 1} wins!`;
+                rollDiceButton.disabled = true;
+                return;
+            }
+
+            currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+            status.textContent = `Player ${currentPlayerIndex + 1}'s turn`;
+            drawBoard();
+            drawSnakesAndLadders();
+            drawPlayers();
+        }
+
+        rollDiceButton.addEventListener('click', movePlayer);
+
+        drawBoard();
+        drawSnakesAndLadders();
+        drawPlayers();
+    </script>
+</body>
+</html>
